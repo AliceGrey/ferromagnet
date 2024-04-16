@@ -6,7 +6,6 @@ import subprocess
 import xmltodict
 import queue
 import threading
-from pprint import pprint
 
 # All potential Cobalt Strike Config Keys With (x86/x64) Prefix
 keys_to_check = [

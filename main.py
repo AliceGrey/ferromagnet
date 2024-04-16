@@ -1,13 +1,13 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
 # TODO: Figure out why there are blanks in the config extraction
+# TODO: Store raw nmap data - New table (timestamp, ip address, command, output in raw json)
 # TODO: Check all parsing logic
 # TODO: Comment all the things
 
 import sqlite3
 import json
 from connectors import shodan_api, censys_api, nmap_api
-from pprint import pprint
 
 # Load the JSON data from the file
 with open('config.json') as f:
