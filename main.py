@@ -1,5 +1,8 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
+# TODO: Figure out why there are blanks in the config extraction
+# TODO: Check all parsing logic
+# TODO: Comment all the things
 
 import sqlite3
 import json
@@ -96,7 +99,6 @@ def main():
     ip_port_pairs = dedupe_results(all_results)
 
     beacons = nmap_api.scan_for_cs_beacons(ip_port_pairs)
-    # beacons = nmap_api.scan_for_cs_beacons(shodan_dict, all_keys)
 
     # Insert data into the table
     question_marks = ["?"] * len(all_keys)
