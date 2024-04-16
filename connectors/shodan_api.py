@@ -17,7 +17,6 @@ def search(query, SHODAN_API_KEY):
         while page <= total_pages:
             results = api.search(query, page=page)
             total_pages = math.ceil(results['total'] / 100)
-            print(f'Got page {page}/{total_pages}')
             time.sleep(1)
 
             page += 1

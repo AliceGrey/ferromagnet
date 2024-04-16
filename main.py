@@ -10,18 +10,18 @@ from pprint import pprint
 with open('config.json') as f:
     config = json.load(f)
 
-# import API keys
+# Import API keys
 SHODAN_API_KEY = config["shodan"]["api_key"]
 CENSYS_API_ID = config["censys"]["api_id"]
 CENSYS_API_SECRET = config["censys"]["api_secret"]
 
-CENSYS_QUERIES = ["services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
+CENSYS_QUERIES = [#"services.service_name: COBALT_STRIKE",
+                  "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
                 "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }",
                 "services.tls.certificates.leaf_data.issuer.common_name: \"Major Cobalt Strike\"",
                 "services.tls.certificates.leaf_data.subject.common_name: \"Major Cobalt Strike\"",
                 "services.tls.certificates.leaf_data.issuer.common_name: \"Pwn3rs Striked\"",
-                "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\"",
-                "services.service_name: COBALT_STRIKE"
+                "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\""
 ]
 
 SHODAN_QUERIES = [
@@ -87,8 +87,8 @@ def main():
     # Perform Censys search
     print("Searching Censys For Cobalt Strike")
     censys_results = []
-    #for query in CENSYS_QUERIES:
-    #    censys_results.append(censys_api.search(query, CENSYS_API_ID, CENSYS_API_SECRET))
+    for query in CENSYS_QUERIES:
+        censys_results.append(censys_api.search(query, CENSYS_API_ID, CENSYS_API_SECRET))
 
     all_results = shodan_results + censys_results
     # Merge results
