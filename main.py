@@ -1,10 +1,9 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
-# TODO: Figure out why there are blanks in the config extraction
-# TODO: Store raw nmap data - New table (timestamp, ip address, command, output in raw json)
-# TODO: Check all parsing logic
 # TODO: Comment all the things
+# TODO: Write beacons with failed config extract to another table
 
+import os
 import sqlite3
 import json
 from connectors import shodan_api, censys_api, nmap_api
@@ -18,24 +17,25 @@ SHODAN_API_KEY = config["shodan"]["api_key"]
 CENSYS_API_ID = config["censys"]["api_id"]
 CENSYS_API_SECRET = config["censys"]["api_secret"]
 
-CENSYS_QUERIES = [#"services.service_name: COBALT_STRIKE",
-                  "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
-                "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }",
-                "services.tls.certificates.leaf_data.issuer.common_name: \"Major Cobalt Strike\"",
-                "services.tls.certificates.leaf_data.subject.common_name: \"Major Cobalt Strike\"",
-                "services.tls.certificates.leaf_data.issuer.common_name: \"Pwn3rs Striked\"",
-                "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\""
+CENSYS_QUERIES = [
+    "services.service_name: COBALT_STRIKE",
+    "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
+    "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }",
+    "services.tls.certificates.leaf_data.issuer.common_name: \"Major Cobalt Strike\"",
+    "services.tls.certificates.leaf_data.subject.common_name: \"Major Cobalt Strike\"",
+    "services.tls.certificates.leaf_data.issuer.common_name: \"Pwn3rs Striked\"",
+    "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\""
 ]
 
 SHODAN_QUERIES = [
-    #"product:\"Cobalt Strike\"",
-    #"ssl:\"6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C\"",
-    #"hash:-2007783223 port:50050",
+    "product:\"Cobalt Strike\"",
+    "ssl:\"6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C\"",
+    "hash:-2007783223 port:50050",
     "ssl.cert.subject.cn:\"Pwn3rs Striked\"",
     "ssl.cert.issuer.cn:\"Pwn3rs Striked\"",
     "ssl.cert.subject.cn:\"Major Cobalt Strike\"",
     "ssl.cert.issuer.cn:\"Major Cobalt Strike\"",
-    #"watermark:"
+    "watermark:"
 ]
 
 
@@ -81,22 +81,30 @@ def main():
     table_gen = "CREATE TABLE IF NOT EXISTS beacons (" + ", ".join(all_columns) + ")"
     c.execute(table_gen)
 
-    # Perform Shodan search
-    print("Searching Shodan For Cobalt Strike")
-    shodan_results = []
-    for query in SHODAN_QUERIES:
-        shodan_results.append(shodan_api.search(query, SHODAN_API_KEY))
+    if os.path.exists('ip-port-pair-cache.json'):
+        print('Loading IP/Port pairs from cache')
+        with open('ip-port-pair-cache.json') as file:
+            ip_port_pairs = json.loads(file.read())
+    else:
+        # Perform Shodan search
+        print("Searching Shodan For Cobalt Strike")
+        shodan_results = []
+        for query in SHODAN_QUERIES:
+            shodan_results.append(shodan_api.search(query, SHODAN_API_KEY))
 
-    # Perform Censys search
-    print("Searching Censys For Cobalt Strike")
-    censys_results = []
-    for query in CENSYS_QUERIES:
-        censys_results.append(censys_api.search(query, CENSYS_API_ID, CENSYS_API_SECRET))
+        # Perform Censys search
+        print("Searching Censys For Cobalt Strike")
+        censys_results = []
+        for query in CENSYS_QUERIES:
+            censys_results.append(censys_api.search(query, CENSYS_API_ID, CENSYS_API_SECRET))
 
-    all_results = shodan_results + censys_results
-    # Merge results
-    print("Merging Shodan and Censys Results")
-    ip_port_pairs = dedupe_results(all_results)
+        all_results = shodan_results + censys_results
+        # Merge results
+        print("Merging Shodan and Censys Results")
+        ip_port_pairs = dedupe_results(all_results)
+    
+        with open('ip-port-pair-cache.json', 'wt') as file:
+            file.write(json.dumps(ip_port_pairs))
 
     beacons = nmap_api.scan_for_cs_beacons(ip_port_pairs)
 

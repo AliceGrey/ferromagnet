@@ -17,7 +17,7 @@ description = [[
 ]] 
 
 categories = {"safe"}
-author = "Wade Hickey, Zach Stanford"
+author = "Wade Hickey, Zach Stanford, Allie Roblee"
 
 -- Rule
 portrule = shortport.http
@@ -117,9 +117,7 @@ local function parse_field(key_name,contents,hex_flag,format)
 end
 
 
-local function grab_beacon(response)
-
-	local output = {}
+local function grab_beacon(response, output, prefix)
 
 	local test_string = string.char(0xFF) .. string.char(0xFF) .. string.char(0xFF)
 	local return_string = ""
@@ -143,43 +141,39 @@ local function grab_beacon(response)
 				repacked2 = repacked2 .. string.pack(endian,z ~ 0x69696969) --version 3
 			end
 
-			output["Beacon Type"] = parse_field("Beacon Type",repacked,"\x00\x01\x00\x01\x00\x02",">H")
-			if not output["Beacon Type"] then
-				output["Beacon Type"] = parse_field("Beacon Type",repacked2,"\x00\x01\x00\x01\x00\x02",">H")
+			output["beacon_type"] = parse_field("Beacon Type",repacked,"\x00\x01\x00\x01\x00\x02",">H")
+			if not output["beacon_type"] then
+				output["beacon_type"] = parse_field("Beacon Type",repacked2,"\x00\x01\x00\x01\x00\x02",">H")
 				repacked = repacked2
 			end
 
-			output["Port"] = parse_field("Port",repacked,"\x00\x02\x00\x01\x00\x02",">H")
-			output["Polling"] = parse_field("Polling",repacked,"\x00\x03\x00\x02\x00\x04",">I")
-			output["Jitter"] = parse_field("Jitter",repacked,"\x00\x05\x00\x01\x00\x02",">H")
-			output["Max DNS"] = parse_field("Max DNS",repacked,"\x00\x06\x00\x01\x00\x02",">H")
-			output["C2 Server"] = parse_field("C2 Server",repacked,"\x00\x08\x00\x03\x01\x00","z")
-			output["User Agent"] = parse_field("User Agent",repacked,"\x00\x09\x00\x03\x00\x80","z")
-			output["HTTP Method Path 2"] = parse_field("HTTP Method Path 2",repacked,"\x00\x0a\x00\x03\x00\x40","z")
-			output["Header 1"] = parse_field("Header 1",repacked,"\x00\x0c\x00\x03\x01\x00","z")
-			output["Header 2"] = parse_field("Header 2",repacked,"\x00\x0d\x00\x03\x01\x00","z")
-			output["Injection Process"] = parse_field("Injection Process",repacked,"\x00\x0e\x00\x03\x00\x40","z")
-			output["Pipe Name"] = parse_field("Pipe Name",repacked,"\x00\x0f\x00\x03\x00\x80","z")
-			output["Year"] = parse_field("Year",repacked,"\x00\x10\x00\x01\x00\x02",">H")
-			output["Month"] = parse_field("Month",repacked,"\x00\x11\x00\x01\x00\x02",">H")
-			output["Day"] = parse_field("Day",repacked,"\x00\x12\x00\x01\x00\x02",">H")
-			output["DNS Idle"] = parse_field("DNS Idle",repacked,"\x00\x13\x00\x02\x00\x04","B")
-			output["DNS Sleep"] = parse_field("DNS Sleep",repacked,"\x00\x14\x00\x02\x00\x04",">H")
-			output["Method 1"] = parse_field("Method 1",repacked,"\x00\x1a\x00\x03\x00\x10","z")
-			output["Method 2"] = parse_field("Method 2",repacked,"\x00\x1b\x00\x03\x00\x10","z")
-			output["Spawn To x86"] = parse_field("Spawn To x86",repacked,"\x00\x1d\x00\x03\x00\x40","z")
-			output["Spawn To x64"] = parse_field("Spawn To x64",repacked,"\x00\x1e\x00\x03\x00\x40","z")
-			output["Proxy Hostname"] = parse_field("Proxy Hostname",repacked,"\x00\x20\x00\x03\x00\x80","z")
-			output["Proxy Username"] = parse_field("Proxy Username",repacked,"\x00\x21\x00\x03\x00\x40","z")
-			output["Proxy Password"] = parse_field("Proxy Password",repacked,"\x00\x22\x00\x03\x00\x40","z")
-			output["Proxy Access Type"] = parse_field("Proxy Access Type",repacked,"\x00\x23\x00\x01\x00\x02","z")
-			output["CreateRemoteThread"] = parse_field("CreateRemoteThread",repacked,"\x00\x24\x00\x01\x00\x02","z")
-
-			
-			output["Watermark"] = parse_field("Watermark",repacked,"\x00\x25\x00\x02\x00\x04",">I")
-			output["C2 Host Header"] = parse_field("C2 Host Header",repacked,"\x00\x36\x00\x03\x00\x80","z")
-
-
+			output[prefix .. "port"] = parse_field("Port",repacked,"\x00\x02\x00\x01\x00\x02",">H")
+			output[prefix .. "polling"] = parse_field("Polling",repacked,"\x00\x03\x00\x02\x00\x04",">I")
+			output[prefix .. "jitter"] = parse_field("Jitter",repacked,"\x00\x05\x00\x01\x00\x02",">H")
+			output[prefix .. "max_dns"] = parse_field("Max DNS",repacked,"\x00\x06\x00\x01\x00\x02",">H")
+			output[prefix .. "c2_server"] = parse_field("C2 Server",repacked,"\x00\x08\x00\x03\x01\x00","z")
+			output[prefix .. "user_agent"] = parse_field("User Agent",repacked,"\x00\x09\x00\x03\x00\x80","z")
+			output[prefix .. "http_method_path_2"] = parse_field("HTTP Method Path 2",repacked,"\x00\x0a\x00\x03\x00\x40","z")
+			output[prefix .. "header_1"] = parse_field("Header 1",repacked,"\x00\x0c\x00\x03\x01\x00","z")
+			output[prefix .. "header_2"] = parse_field("Header 2",repacked,"\x00\x0d\x00\x03\x01\x00","z")
+			output[prefix .. "injection_process"] = parse_field("Injection Process",repacked,"\x00\x0e\x00\x03\x00\x40","z")
+			output[prefix .. "pipe_name"] = parse_field("Pipe Name",repacked,"\x00\x0f\x00\x03\x00\x80","z")
+			output[prefix .. "year"] = parse_field("Year",repacked,"\x00\x10\x00\x01\x00\x02",">H")
+			output[prefix .. "month"] = parse_field("Month",repacked,"\x00\x11\x00\x01\x00\x02",">H")
+			output[prefix .. "day"] = parse_field("Day",repacked,"\x00\x12\x00\x01\x00\x02",">H")
+			output[prefix .. "dns_idle"] = parse_field("DNS Idle",repacked,"\x00\x13\x00\x02\x00\x04","B")
+			output[prefix .. "dns_sleep"] = parse_field("DNS Sleep",repacked,"\x00\x14\x00\x02\x00\x04",">H")
+			output[prefix .. "method_1"] = parse_field("Method 1",repacked,"\x00\x1a\x00\x03\x00\x10","z")
+			output[prefix .. "method_2"] = parse_field("Method 2",repacked,"\x00\x1b\x00\x03\x00\x10","z")
+			output[prefix .. "spawn_to_x86"] = parse_field("Spawn To x86",repacked,"\x00\x1d\x00\x03\x00\x40","z")
+			output[prefix .. "spawn_to_x64"] = parse_field("Spawn To x64",repacked,"\x00\x1e\x00\x03\x00\x40","z")
+			output[prefix .. "proxy_hostname"] = parse_field("Proxy Hostname",repacked,"\x00\x20\x00\x03\x00\x80","z")
+			output[prefix .. "proxy_username"] = parse_field("Proxy Username",repacked,"\x00\x21\x00\x03\x00\x40","z")
+			output[prefix .. "proxy_password"] = parse_field("Proxy Password",repacked,"\x00\x22\x00\x03\x00\x40","z")
+			output[prefix .. "proxy_access_type"] = parse_field("Proxy Access Type",repacked,"\x00\x23\x00\x01\x00\x02","z")
+			output[prefix .. "create_remote_thread"] = parse_field("CreateRemoteThread",repacked,"\x00\x24\x00\x01\x00\x02","z")
+			output[prefix .. "watermark"] = parse_field("Watermark",repacked,"\x00\x25\x00\x02\x00\x04",">I")
+			output[prefix .. "c2_host_header"] = parse_field("C2 Host Header",repacked,"\x00\x36\x00\x03\x00\x80","z")
 
 			if (stdnse.get_script_args("save")) == "true" then
 				local write_out = io.open(stdnse.tohex(openssl.digest("sha256",response.body)) .. ".bin","w")
@@ -188,7 +182,6 @@ local function grab_beacon(response)
 			end
 		end	
 	end
-	return output
 end
 
 
@@ -198,34 +191,34 @@ action = function(host,port)
 	local uri_x86 = generate_checksum(92)
 	local uri_x64 = generate_checksum(93)
 
-	local response_x86 = http.get(host,port,uri_x86)
+	local http_options = {}
+	http_options["header"] = {}
+	http_options["header"]["User-Agent"] = ""
+
+	local response_x86 = http.get(host,port,uri_x86,http_options)
 	if response_x86.body == nil then
 		return "No Valid Response"
 	end
 
-	json_output['x86'] = {}
-	json_output['x86']['uri_queried'] = uri_x86
-	json_output['x86']['sha256'] = stdnse.tohex(openssl.digest("sha256",response_x86.body))
-	json_output['x86']['sha1'] = stdnse.tohex(openssl.digest("sha1",response_x86.body))
-	json_output['x86']['md5'] = stdnse.tohex(openssl.digest("md5",response_x86.body))
-	json_output['x86']['time'] = stdnse.clock_ms()
-	json_output['x86']['config'] = grab_beacon(response_x86)
+	json_output['x86_uri_queried'] = uri_x86
+	json_output['x86_sha256'] = stdnse.tohex(openssl.digest("sha256",response_x86.body))
+	json_output['x86_sha1'] = stdnse.tohex(openssl.digest("sha1",response_x86.body))
+	json_output['x86_md5'] = stdnse.tohex(openssl.digest("md5",response_x86.body))
+	json_output['x86_time'] = stdnse.clock_ms()
+	grab_beacon(response_x86, json_output, 'x86_')
 
-	local response_x64 = http.get(host,port,uri_x64)
+	local response_x64 = http.get(host,port,uri_x64,http_options)
 
 	if response_x64.body == nil then
 		return "No Valid Response"
 	end
 
-	json_output['x64'] = {}
-	json_output['x64']['uri_queried'] = uri_x64
-	json_output['x64']['sha256'] = stdnse.tohex(openssl.digest("sha256",response_x64.body))
-	json_output['x64']['sha1'] = stdnse.tohex(openssl.digest("sha1",response_x64.body))
-	json_output['x64']['md5'] = stdnse.tohex(openssl.digest("md5",response_x64.body))
-	json_output['x64']['time'] = stdnse.clock_ms()
-	json_output['x64']['config'] = grab_beacon(response_x64)
-
-
+	json_output['x64_uri_queried'] = uri_x64
+	json_output['x64_sha256'] = stdnse.tohex(openssl.digest("sha256",response_x64.body))
+	json_output['x64_sha1'] = stdnse.tohex(openssl.digest("sha1",response_x64.body))
+	json_output['x64_md5'] = stdnse.tohex(openssl.digest("md5",response_x64.body))
+	json_output['x64_time'] = stdnse.clock_ms()
+	grab_beacon(response_x64, json_output, 'x64_')
 
 	json_output = json.generate(json_output)
 	return json_output

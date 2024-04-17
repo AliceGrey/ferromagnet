@@ -9,12 +9,12 @@ import threading
 
 # All potential Cobalt Strike Config Keys With (x86/x64) Prefix
 keys_to_check = [
-    'sha256', 'sha1', 'uri_queried', 'md5', 'time', 'Beacon Type', 'Port', 'Polling', 'Jitter', 'C2 Server',
-    'Spawn To x86', 'Spawn To x64', 'Watermark', 'C2 Host Header',
-    'Max DNS', 'User Agent', 'HTTP Method Path 2', 'Header 1', 'Header 2',
-    'Injection Process', 'Pipe Name', 'Year', 'Month', 'Day', 'DNS Idle',
-    'DNS Sleep', 'Method 1', 'Method 2', 'Proxy Hostname', 'Proxy Username',
-    'Proxy Password', 'Proxy Access Type', 'Create Remote Thread'
+    'sha256', 'sha1', 'uri_queried', 'md5', 'time', 'beacon_type', 'port', 'polling', 'jitter', 'c2_server',
+    'spawn_to_x86', 'spawn_to_x64', 'watermark', 'c2_host_header',
+    'max_dns', 'user_agent', 'http_method_path_2', 'header_1', 'header_2',
+    'injection_process', 'pipe_name', 'year', 'month', 'day', 'dns_idle',
+    'dns_sleep', 'method_1', 'method_2', 'proxy_hostname', 'proxy_username',
+    'proxy_password', 'proxy_access_type', 'create_remote_thread'
 ]
 
 # Singular Scan Result Keys
@@ -23,8 +23,8 @@ all_keys = [
 ]
 # Add x86 and x64 keys to all_keys
 for key in keys_to_check:
-    all_keys.append(f'x64_{key.lower().replace(" ", "_")}')
-    all_keys.append(f'x86_{key.lower().replace(" ", "_")}')
+    all_keys.append(f'x64_{key}')
+    all_keys.append(f'x86_{key}')
 
 
 class Worker(threading.Thread):
@@ -61,10 +61,22 @@ class Worker(threading.Thread):
 
 
 def scan_for_cs_beacons(ip_port_pairs):
+    import os
+    import json
+    if os.path.exists('beacon-cache.json'):
+        print('Loading beacons from cache')
+        with open('beacon-cache.json') as file:
+            return json.loads(file.read())
+    
+    LIMIT = 10
     host_queue = queue.Queue()
     print(f'Queueing up {len(ip_port_pairs)} IPs')
     for host in ip_port_pairs.items():
         host_queue.put(host)
+
+        LIMIT -= 1
+        if LIMIT <= 0:
+            break
 
     NUM_WORKERS = 5
     workers = []
@@ -80,14 +92,18 @@ def scan_for_cs_beacons(ip_port_pairs):
         worker.join()
         all_beacons += worker.beacons
     
+    with open('beacon-cache.json', 'wt') as file:
+        file.write(json.dumps(all_beacons))
+
     return all_beacons
+
 
 def parse_nmap_output(result):
     beacon = None
     parsed = {key: None for key in all_keys}
     # Check if the host is online
     if result['nmaprun']['host']['status']['@state'] != 'up':
-        return
+        return None
 
     # Handle if more than one port was scanned
     if isinstance(result['nmaprun']['host']['ports']['port'], list):
@@ -120,7 +136,7 @@ def parse_nmap_output(result):
 
     # Quit parsing if there isn't any beacon data
     if beacon is None:
-        return
+        return None
 
     parsed['seen_at'] = result['nmaprun']['runstats']['finished']['@time']
     parsed['ip'] = result['nmaprun']['host']['address']['@addr']
@@ -131,28 +147,53 @@ def parse_nmap_output(result):
     if 'service' in beacon['port']:
         parsed['service'] = beacon['port']['service']['@name']
 
-    # if x86 beacon was found by Nmap
-    if 'x86' in beacon:
-        # Pull out all x86 config related key/value pairs
-        config = beacon['x86']['config']
-        # Loop over all config values we got from Nmap
-        for key, value in config.items():
-            # Convert key for dictionary flattening
-            new_key = f'x86_{key.lower().replace(" ", "_")}'
-            # If key exists, save value
-            if new_key in all_keys:
-                parsed[new_key] = value
+    # Check that we actually got the x86/x64 beacons
+    has_x86 = 'x86_port' in beacon.keys()
+    has_x64 = 'x64_port' in beacon.keys()
+
+    # If we didn't get either, bail out
+    if not has_x86 and not has_x64:
+        return None
+
+    # Loop over all config values we got from Nmap
+    for key, value in beacon.items():
+
+        # If key exists, save value
+        if key in all_keys:
+            parsed[key] = value
+
+
+    # # if x86 beacon was found by Nmap
+    # if 'x86' in beacon:
+    #     # Pull out all x86 config related key/value pairs
+    #     config = beacon['x86']['config']
+    #     if len(config) > 0:
+    #         has_config = True
+
+    #     # Loop over all config values we got from Nmap
+    #     for key, value in config.items():
+    #         # Convert key for dictionary flattening
+    #         new_key = f'x86_{key.lower().replace(" ", "_")}'
+    #         # If key exists, save value
+    #         if new_key in all_keys:
+    #             parsed[new_key] = value
     
-    # if x64 beacon was found by Nmap
-    if 'x64' in beacon:
-        # Pull out all x64 config related key/value pairs
-        config = beacon['x64']['config']
-        # Loop over all config values we got from Nmap
-        for key, value in config.items():
-            # Convert key for dictionary flattening
-            new_key = f'x64_{key.lower().replace(" ", "_")}'
-            # If key exists, save value
-            if new_key in all_keys:
-                parsed[new_key] = value
+    # # if x64 beacon was found by Nmap
+    # if 'x64' in beacon:
+    #     # Pull out all x64 config related key/value pairs
+    #     config = beacon['x64']['config']
+    #     if len(config) > 0:
+    #         has_config = True
+
+    #     # Loop over all config values we got from Nmap
+    #     for key, value in config.items():
+    #         # Convert key for dictionary flattening
+    #         new_key = f'x64_{key.lower().replace(" ", "_")}'
+    #         # If key exists, save value
+    #         if new_key in all_keys:
+    #             parsed[new_key] = value
+
+    # if not has_config:
+    #     return None
 
     return parsed
