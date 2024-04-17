@@ -1,6 +1,7 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
 # TODO: Comment all the things
+# TODO: Debug mode
 # TODO: Write beacons with failed config extract to another table
 
 import os
@@ -17,6 +18,7 @@ SHODAN_API_KEY = config["shodan"]["api_key"]
 CENSYS_API_ID = config["censys"]["api_id"]
 CENSYS_API_SECRET = config["censys"]["api_secret"]
 
+# Censys search queries
 CENSYS_QUERIES = [
     "services.service_name: COBALT_STRIKE",
     "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
@@ -27,6 +29,7 @@ CENSYS_QUERIES = [
     "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\""
 ]
 
+# Shodan search queries
 SHODAN_QUERIES = [
     "product:\"Cobalt Strike\"",
     "ssl:\"6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C\"",
@@ -40,6 +43,12 @@ SHODAN_QUERIES = [
 
 
 def dedupe_results(pages):
+    """
+    # function: dedupe_results
+    # purpose: 
+    # inputs: 
+    # returns:
+    """
     merged = {}
     # Iterate over each dictionary in the list
     for page in pages:
@@ -60,6 +69,12 @@ def dedupe_results(pages):
     return merged
 
 def main():
+    """
+    # function: main
+    # purpose: 
+    # inputs: 
+    # returns:
+    """
     # Initialize SQLite database connection and cursor
     conn = sqlite3.connect('beacons.db')
     c = conn.cursor()
@@ -81,10 +96,10 @@ def main():
     table_gen = "CREATE TABLE IF NOT EXISTS beacons (" + ", ".join(all_columns) + ")"
     c.execute(table_gen)
 
-    if os.path.exists('ip-port-pair-cache.json'):
-        print('Loading IP/Port pairs from cache')
-        with open('ip-port-pair-cache.json') as file:
-            ip_port_pairs = json.loads(file.read())
+    if 'DEBUG' in os.environ and os.path.exists('ip-port-pair-cache.json'):
+            print('Loading IP/Port pairs from cache')
+            with open('ip-port-pair-cache.json') as file:
+                ip_port_pairs = json.loads(file.read())
     else:
         # Perform Shodan search
         print("Searching Shodan For Cobalt Strike")
@@ -103,8 +118,9 @@ def main():
         print("Merging Shodan and Censys Results")
         ip_port_pairs = dedupe_results(all_results)
     
-        with open('ip-port-pair-cache.json', 'wt') as file:
-            file.write(json.dumps(ip_port_pairs))
+        if 'DEBUG' in os.environ:
+            with open('ip-port-pair-cache.json', 'wt') as file:
+                file.write(json.dumps(ip_port_pairs))
 
     beacons = nmap_api.scan_for_cs_beacons(ip_port_pairs)
 

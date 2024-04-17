@@ -6,6 +6,12 @@ import math
 import time
 
 def search(query, SHODAN_API_KEY):
+    """
+    # function: search
+    # purpose: 
+    # inputs: 
+    # returns:
+    """
     ip_port_pairs = {}
     try:
 

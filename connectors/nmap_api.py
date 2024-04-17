@@ -6,6 +6,8 @@ import subprocess
 import xmltodict
 import queue
 import threading
+import os
+import json
 
 # All potential Cobalt Strike Config Keys With (x86/x64) Prefix
 keys_to_check = [
@@ -28,8 +30,21 @@ for key in keys_to_check:
 
 
 class Worker(threading.Thread):
+    """
+    # class: Worker
+    # purpose: Define custom thread class
+    # inputs: The queue of hosts to scan
+    # returns: The Cobalt Strike beacons found
+    """
 
     def __init__(self, host_queue, host_count):
+        """
+        # function: __init__
+        # purpose: Initialize all worker variables
+        # inputs: The queue of hosts and the number of hosts in the queue at the start
+        # returns: None
+        """
+        # Call threading.Thread.__init__() to initialize the parent thread class
         super().__init__()
 
         self.host_queue = host_queue
@@ -38,67 +53,102 @@ class Worker(threading.Thread):
         self.beacons = []
 
     def run(self):
-
+        """
+        # function: run
+        # purpose: Define work to be done in the thread
+        # inputs: none
+        # returns: none
+        """
+        # Loop until the queue is empty
         while True:
             try:
                 host = self.host_queue.get_nowait()
             except queue.Empty:
                 break
 
-            hosts_remaining = self.host_count - self.host_queue.qsize()
+            # Calculate the number of hosts removed from the queue so far
+            hosts_finished = self.host_count - self.host_queue.qsize()
 
+            # Extract host information from tuple
             (ip, port_list) = host
             port_list = map(str, port_list)
-
+            
+            # Define custom nmap command
             cmd = ['nmap', ip, '-p', ','.join(port_list), '--script', 'grab_beacon_config.nse', '-vv', '-d', '-n', '-Pn', '-T3', '-oX', '-']
-            print(f'Thread {self.native_id} - Scan {hosts_remaining}/{self.host_count}: Running command {" ".join(cmd)}')
+            print(f'Thread {self.native_id} - Scan {hosts_finished}/{self.host_count}: Running command {" ".join(cmd)}')
 
+            # Execute nmap command in subprocess
             nmap_cmd_result = subprocess.run(cmd, capture_output=True, text=True)
+            # Convert nmap xml output to python dict
             nmap_result_dict = xmltodict.parse(nmap_cmd_result.stdout)
+            # Parse dict to extract Beacon config data we care about
             parsed_result = parse_nmap_output(nmap_result_dict)
             if parsed_result is not None:
                 self.beacons.append(parsed_result)
 
 
 def scan_for_cs_beacons(ip_port_pairs):
-    import os
-    import json
-    if os.path.exists('beacon-cache.json'):
-        print('Loading beacons from cache')
-        with open('beacon-cache.json') as file:
-            return json.loads(file.read())
+    """
+    # function: scan_for_cs_beacons
+    # purpose: Use threading to scan for cobalt strike beacons
+    # inputs: The list of (ip, [port]) tuples to process
+    # returns: All beacons found
+    """
     
-    LIMIT = 10
+    # Cache beacon data for debug mode
+    if 'DEBUG' in os.environ:
+        if os.path.exists('beacon-cache.json'):
+            print('Loading beacons from cache')
+            with open('beacon-cache.json') as file:
+                return json.loads(file.read())
+    
+    # Set limit for amount of beacons to scan in debug mode
+    SCAN_LIMIT = 10
+    
     host_queue = queue.Queue()
     print(f'Queueing up {len(ip_port_pairs)} IPs')
+    
+    # Add hosts to the queue of work to be done
     for host in ip_port_pairs.items():
         host_queue.put(host)
 
-        LIMIT -= 1
-        if LIMIT <= 0:
+        SCAN_LIMIT -= 1
+        if SCAN_LIMIT <= 0:
             break
-
+    
+    # Maximum number of workers running at one time
     NUM_WORKERS = 5
-    workers = []
+    workers = [] 
 
+    # Create the worker thread objects
     for _ in range(NUM_WORKERS):
         workers.append(Worker(host_queue, len(ip_port_pairs)))
 
+    # Start each worker thread
     for worker in workers:
         worker.start()
 
+    # Wait for all worker threads to finish, and combine all their beacon data
     all_beacons = []
     for worker in workers:
         worker.join()
         all_beacons += worker.beacons
     
-    with open('beacon-cache.json', 'wt') as file:
-        file.write(json.dumps(all_beacons))
+    # Write to beacon-cache if debug mode is enabled
+    if 'DEBUG' in os.environ:
+        with open('beacon-cache.json', 'wt') as file:
+            file.write(json.dumps(all_beacons))
 
     return all_beacons
 
 
 def parse_nmap_output(result):
+    """
+    # function: parse_nmap_output
+    # purpose: Parse the dictionary that was converted from the nmap XML output
+    # inputs: Dictionary of an nmap scan result
+    # returns: All beacon configuration data that was found in the scan results
+    """
     beacon = None
     parsed = {key: None for key in all_keys}
     # Check if the host is online
@@ -138,6 +188,22 @@ def parse_nmap_output(result):
     if beacon is None:
         return None
 
+    # Check that we actually got the x86/x64 beacons
+    has_x86 = 'x86_port' in beacon.keys()
+    has_x64 = 'x64_port' in beacon.keys()
+
+    # If we didn't get either, bail out
+    if not has_x86 and not has_x64:
+        return None
+    
+    # Loop over all config values we got from Nmap
+    for key, value in beacon.items():
+
+        # If key exists, save value
+        if key in all_keys:
+            parsed[key] = value
+    
+    # Set the base nmap values not from the NSE
     parsed['seen_at'] = result['nmaprun']['runstats']['finished']['@time']
     parsed['ip'] = result['nmaprun']['host']['address']['@addr']
     parsed['hostnames'] = result['nmaprun']['host']['hostnames']
@@ -146,54 +212,5 @@ def parse_nmap_output(result):
 
     if 'service' in beacon['port']:
         parsed['service'] = beacon['port']['service']['@name']
-
-    # Check that we actually got the x86/x64 beacons
-    has_x86 = 'x86_port' in beacon.keys()
-    has_x64 = 'x64_port' in beacon.keys()
-
-    # If we didn't get either, bail out
-    if not has_x86 and not has_x64:
-        return None
-
-    # Loop over all config values we got from Nmap
-    for key, value in beacon.items():
-
-        # If key exists, save value
-        if key in all_keys:
-            parsed[key] = value
-
-
-    # # if x86 beacon was found by Nmap
-    # if 'x86' in beacon:
-    #     # Pull out all x86 config related key/value pairs
-    #     config = beacon['x86']['config']
-    #     if len(config) > 0:
-    #         has_config = True
-
-    #     # Loop over all config values we got from Nmap
-    #     for key, value in config.items():
-    #         # Convert key for dictionary flattening
-    #         new_key = f'x86_{key.lower().replace(" ", "_")}'
-    #         # If key exists, save value
-    #         if new_key in all_keys:
-    #             parsed[new_key] = value
-    
-    # # if x64 beacon was found by Nmap
-    # if 'x64' in beacon:
-    #     # Pull out all x64 config related key/value pairs
-    #     config = beacon['x64']['config']
-    #     if len(config) > 0:
-    #         has_config = True
-
-    #     # Loop over all config values we got from Nmap
-    #     for key, value in config.items():
-    #         # Convert key for dictionary flattening
-    #         new_key = f'x64_{key.lower().replace(" ", "_")}'
-    #         # If key exists, save value
-    #         if new_key in all_keys:
-    #             parsed[new_key] = value
-
-    # if not has_config:
-    #     return None
 
     return parsed

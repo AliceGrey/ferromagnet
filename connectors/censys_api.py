@@ -6,6 +6,12 @@ from censys.search import CensysHosts
 from censys.common.exceptions import CensysException
 
 def search(query, CENSYS_API_ID, CENSYS_API_SECRET):
+    """
+    # function: search
+    # purpose: 
+    # inputs: 
+    # returns:
+    """
     ip_port_pairs = {}
     try:
         count = 0

@@ -141,9 +141,9 @@ local function grab_beacon(response, output, prefix)
 				repacked2 = repacked2 .. string.pack(endian,z ~ 0x69696969) --version 3
 			end
 
-			output["beacon_type"] = parse_field("Beacon Type",repacked,"\x00\x01\x00\x01\x00\x02",">H")
-			if not output["beacon_type"] then
-				output["beacon_type"] = parse_field("Beacon Type",repacked2,"\x00\x01\x00\x01\x00\x02",">H")
+			output[prefix .. "beacon_type"] = parse_field("Beacon Type",repacked,"\x00\x01\x00\x01\x00\x02",">H")
+			if not output[prefix .. "beacon_type"] then
+				output[prefix .. "beacon_type"] = parse_field("Beacon Type",repacked2,"\x00\x01\x00\x01\x00\x02",">H")
 				repacked = repacked2
 			end
 
