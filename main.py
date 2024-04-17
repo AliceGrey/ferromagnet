@@ -1,8 +1,5 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
-# TODO: Comment all the things
-# TODO: Debug mode
-# TODO: Write beacons with failed config extract to another table
 
 import os
 import sqlite3
