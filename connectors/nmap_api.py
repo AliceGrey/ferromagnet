@@ -97,13 +97,13 @@ def scan_for_cs_beacons(ip_port_pairs):
     
     # Cache beacon data for debug mode
     if 'DEBUG' in os.environ:
+        # Set limit for amount of beacons to scan in debug mode
+        SCAN_LIMIT = 10
         if os.path.exists('beacon-cache.json'):
             print('Loading beacons from cache')
             with open('beacon-cache.json') as file:
                 return json.loads(file.read())
     
-    # Set limit for amount of beacons to scan in debug mode
-    SCAN_LIMIT = 10
     
     host_queue = queue.Queue()
     print(f'Queueing up {len(ip_port_pairs)} IPs')
@@ -112,9 +112,11 @@ def scan_for_cs_beacons(ip_port_pairs):
     for host in ip_port_pairs.items():
         host_queue.put(host)
 
-        SCAN_LIMIT -= 1
-        if SCAN_LIMIT <= 0:
-            break
+        # Use scan limit in debug mode
+        if 'DEBUG' in os.environ:
+            SCAN_LIMIT -= 1
+            if SCAN_LIMIT <= 0:
+                break
     
     # Maximum number of workers running at one time
     NUM_WORKERS = 5
