@@ -65,3 +65,6 @@ venv.bak/
 
 # Config file
 config.json
+
+# Cache files
+*cache.json

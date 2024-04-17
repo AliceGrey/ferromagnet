@@ -45,9 +45,9 @@ SHODAN_QUERIES = [
 def dedupe_results(pages):
     """
     # function: dedupe_results
-    # purpose: 
-    # inputs: 
-    # returns:
+    # purpose: Deduplicate results in dictionary of search results
+    # inputs: A dictionary containing IP/Port pairs from Shodan and Censys search results
+    # returns: A deduplicated dictionary of IP/Port pairs
     """
     merged = {}
     # Iterate over each dictionary in the list
@@ -71,9 +71,9 @@ def dedupe_results(pages):
 def main():
     """
     # function: main
-    # purpose: 
-    # inputs: 
-    # returns:
+    # purpose: Initialize database to store beacon data in, query APIs for possible beacons, then call nmap to scan for beacons and parse data
+    # inputs: None
+    # returns: Database of Cobalt Strike beacon configuration data
     """
     # Initialize SQLite database connection and cursor
     conn = sqlite3.connect('beacons.db')
