@@ -7,6 +7,7 @@ from shodan import Shodan
 import math
 import time
 
+
 def search(query, SHODAN_API_KEY):
     """
     # function: search
@@ -17,7 +18,7 @@ def search(query, SHODAN_API_KEY):
     ip_port_pairs = {}
     try:
         count = 0
-        total_pages = 1 # We always get at least one page
+        total_pages = 1  # We always get at least one page
         page = 1
         api = Shodan(SHODAN_API_KEY)
 
@@ -43,5 +44,5 @@ def search(query, SHODAN_API_KEY):
 
     except KeyError as e:
         print('Error: {}'.format(e))
-    
+
     return ip_port_pairs

@@ -7,6 +7,7 @@ import time
 from censys.search import CensysHosts
 from censys.common.exceptions import CensysException
 
+
 def search(query, CENSYS_API_ID, CENSYS_API_SECRET):
     """
     # function: search
@@ -36,7 +37,7 @@ def search(query, CENSYS_API_ID, CENSYS_API_SECRET):
 
             # Handle API rate limit
             time.sleep(2)
-        
+
         # Extract the IP/Port pairs from the search results
         for host in all_results:
             ip = host['ip']
@@ -47,9 +48,9 @@ def search(query, CENSYS_API_ID, CENSYS_API_SECRET):
             for service in services:
                 port = service['port']
                 ip_port_pairs[ip].append(port)
-           
+
         print(f'{count} Results From Censys Query - {query}')
-    
+
     except CensysException as e:
         print(f"Error: {e}")
 
