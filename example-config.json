@@ -1,0 +1,9 @@
+{
+    "shodan": {
+        "api_key": "YOUR-KEY-GOES-HERE"
+    },
+    "censys": {
+        "api_id": "YOUR-ID-GOES-HERE",
+        "api_secret": "YOUR-SECRET-GOES-HERE"
+    }
+}
