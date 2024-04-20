@@ -6,6 +6,7 @@ local rand = require "rand"
 local openssl = require "openssl"
 local stdnse = require "stdnse"
 local json = require "json"
+local stringaux = require "stringaux"
 
 description = [[ 
 	Simple PoC script to scan and acquire CobaltStrike Beacon configurations.
@@ -152,6 +153,9 @@ local function grab_beacon(response, output, prefix)
 			output[prefix .. "jitter"] = parse_field("Jitter",repacked,"\x00\x05\x00\x01\x00\x02",">H")
 			output[prefix .. "max_dns"] = parse_field("Max DNS",repacked,"\x00\x06\x00\x01\x00\x02",">H")
 			output[prefix .. "c2_server"] = parse_field("C2 Server",repacked,"\x00\x08\x00\x03\x01\x00","z")
+			local tmp = stringaux.strsplit(",%s*", parse_field("C2 Server",repacked,"\x00\x08\x00\x03\x01\x00","z"))
+			output[prefix .. "c2_host"] = tmp[1]
+			output[prefix .. "c2_path"] = tmp[2]
 			output[prefix .. "user_agent"] = parse_field("User Agent",repacked,"\x00\x09\x00\x03\x00\x80","z")
 			output[prefix .. "http_method_path_2"] = parse_field("HTTP Method Path 2",repacked,"\x00\x0a\x00\x03\x00\x40","z")
 			output[prefix .. "header_1"] = parse_field("Header 1",repacked,"\x00\x0c\x00\x03\x01\x00","z")

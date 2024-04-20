@@ -1,6 +1,8 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
-# Shodan api module
+# Provides a Shodan API connector for ferromagnet
+# Exposes the search function to abstract away the Shodan API query
+
 from shodan import Shodan
 import math
 import time

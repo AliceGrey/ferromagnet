@@ -1,6 +1,7 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
-# Censys api module
+# Provides a Censys API connector for ferromagnet
+# Exposes the search function to abstract away the Censys API query
 
 import time
 from censys.search import CensysHosts

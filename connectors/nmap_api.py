@@ -1,5 +1,6 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
+# Provides Nmap scanning functionality to ferromagnet. Uses multi-threading to nmap scan potential cobalt strike beacons and extract their configuration data.
 
 import json
 import subprocess
@@ -12,7 +13,7 @@ import json
 # All potential Cobalt Strike Config Keys With (x86/x64) Prefix
 keys_to_check = [
     'sha256', 'sha1', 'uri_queried', 'md5', 'time', 'beacon_type', 'port', 'polling', 'jitter', 'c2_server',
-    'spawn_to_x86', 'spawn_to_x64', 'watermark', 'c2_host_header',
+    'c2_host', 'c2_path', 'spawn_to_x86', 'spawn_to_x64', 'watermark', 'c2_host_header',
     'max_dns', 'user_agent', 'http_method_path_2', 'header_1', 'header_2',
     'injection_process', 'pipe_name', 'year', 'month', 'day', 'dns_idle',
     'dns_sleep', 'method_1', 'method_2', 'proxy_hostname', 'proxy_username',
@@ -23,6 +24,7 @@ keys_to_check = [
 all_keys = [
     'seen_at', 'ip', 'hostnames', 'protocol', 'port', 'service'
 ]
+
 # Add x86 and x64 keys to all_keys
 for key in keys_to_check:
     all_keys.append(f'x64_{key}')

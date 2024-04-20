@@ -1,5 +1,8 @@
 # Alice "Allie" Roblee
 # CYBR-260-45
+# FerroMagnet - An automated threat actor infrastructure tracking tool, which aims to streamline the identification and analysis of threat actor infrastructure.
+# This script leverages commercial internet scanning services such as Shodan and Censys to gather data on Cobalt Strike command and control (C2) servers.
+# It then extracts configuration data from the discovered Cobalt Strike beacons, and saves them in a SQLite database for further analysis.
 
 import os
 import sqlite3
@@ -17,25 +20,30 @@ CENSYS_API_SECRET = config["censys"]["api_secret"]
 
 # Censys search queries
 CENSYS_QUERIES = [
-    "services.service_name: COBALT_STRIKE",
-    "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
-    "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }",
-    "services.tls.certificates.leaf_data.issuer.common_name: \"Major Cobalt Strike\"",
-    "services.tls.certificates.leaf_data.subject.common_name: \"Major Cobalt Strike\"",
-    "services.tls.certificates.leaf_data.issuer.common_name: \"Pwn3rs Striked\"",
-    "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\""
+    "services.service_name: COBALT_STRIKE", # Censys Detected Cobalt Strike
+    "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }", # Default Cobalt Strike Cert
+    "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }", # Default Cobalt Strike Cert
+    "services.tls.certificates.leaf_data.issuer.common_name: \"Major Cobalt Strike\"", # Default Cobalt Strike Cert
+    "services.tls.certificates.leaf_data.subject.common_name: \"Major Cobalt Strike\"", # Default Cobalt Strike Cert
+    "services.tls.certificates.leaf_data.issuer.common_name: \"Pwn3rs Striked\"", # Default Cobalt Strike Cert
+    "services.tls.certificates.leaf_data.subject.common_name: \"Pwn3rs Striked\"" # Default Cobalt Strike Cert
 ]
 
 # Shodan search queries
 SHODAN_QUERIES = [
-    "product:\"Cobalt Strike\"",
-    "ssl:\"6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C\"",
-    "hash:-2007783223 port:50050",
-    "ssl.cert.subject.cn:\"Pwn3rs Striked\"",
-    "ssl.cert.issuer.cn:\"Pwn3rs Striked\"",
-    "ssl.cert.subject.cn:\"Major Cobalt Strike\"",
-    "ssl.cert.issuer.cn:\"Major Cobalt Strike\"",
-    "watermark:"
+    "product:\"Cobalt Strike\"", # Shodan Detected Cobalt Strike
+    "ssl:\"6ECE5ECE4192683D2D84E25B0BA7E04F9CB7EB7C\"", # Default Cobalt Strike Cert
+    "hash:-2007783223 port:50050", # Known Chinese APT Config
+    "ssl.cert.subject.cn:\"Pwn3rs Striked\"", # Default Cobalt Strike Cert
+    "ssl.cert.issuer.cn:\"Pwn3rs Striked\"", # Default Cobalt Strike Cert
+    "ssl.cert.subject.cn:\"Major Cobalt Strike\"", # Default Cobalt Strike Cert
+    "ssl.cert.issuer.cn:\"Major Cobalt Strike\"", # Default Cobalt Strike Cert
+    "watermark:" # Cobalt Strike Watermark
+    "/s/ref=nb_sb_noss_1/167-3294888-0262949/field-keywords=books", # Amazon Malleable C2 Profile
+    "ssl:redmond ssl:wa ssl:bing.com ssl:Microsoft ssl:us 404 Not Found", # Bing Malleable C2 Profile
+    "ssl:US ssl:CA, ssl:Mountain SSL:google ssl:gmail.com", # Gmail Malleable C2 Profile
+    "ssl:EdgeProxyBAYJune2015", # One Drive Malleable C2 Profile
+    "ssl:windowsupdate.com 404 not found" # Microsoft Update Malleable C2 Profile
 ]
 
 
@@ -108,7 +116,7 @@ def main():
         print("Searching Censys For Cobalt Strike")
         censys_results = []
         for query in CENSYS_QUERIES:
-            censys_results.append(censys_api.search(query, CENSYS_API_ID, CENSYS_API_SECRET))
+           censys_results.append(censys_api.search(query, CENSYS_API_ID, CENSYS_API_SECRET))
 
         all_results = shodan_results + censys_results
         # Merge results
