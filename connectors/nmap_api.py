@@ -98,7 +98,7 @@ def scan_for_cs_beacons(ip_port_pairs):
     """
     
     # Cache beacon data for debug mode
-    if 'DEBUG' in os.environ:
+    if 'DBDEBUG' in os.environ:
         if os.path.exists('beacon-cache.json'):
             print('Loading beacons from cache')
             with open('beacon-cache.json') as file:
@@ -113,6 +113,7 @@ def scan_for_cs_beacons(ip_port_pairs):
         host_queue.put(host)
 
     # Maximum number of workers running at one time
+    # Don't change this unless you really know what you're doing
     NUM_WORKERS = 5
     workers = [] 
 
@@ -131,7 +132,7 @@ def scan_for_cs_beacons(ip_port_pairs):
         all_beacons += worker.beacons
     
     # Write to beacon-cache if debug mode is enabled
-    if 'DEBUG' in os.environ:
+    if 'DBDEBUG' in os.environ:
         with open('beacon-cache.json', 'wt') as file:
             file.write(json.dumps(all_beacons))
 

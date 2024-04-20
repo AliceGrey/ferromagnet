@@ -67,10 +67,20 @@ _You must add your censys and shodan api keys to the config file_
 
 
 <!-- USAGE EXAMPLES -->
-## Usage (Debug Mode)
-To test the functionality of the program using pre-seeded Shodan and Censys data (if you don't have API keys): 
+## Usage (Full Debug Mode)
+To test the database functionality of the program using pre-seeded Shodan and Censys data AND avoid doing any Nmap scans: 
 ```sh
-DEBUG=true python3 ferromagnet.py
+NMAPDEBUG=true DBDEBUG=true python3 ferromagnet.py
+```
+
+## Usage (Partial Debug Mode)
+To test the nmap functionality of the program using pre-seeded Shodan and Censys data: 
+```sh
+NMAPDEBUG=true python3 ferromagnet.py
+```
+To test the database functionality of the program without using pre-seeded Shodan and Censys data:
+```sh
+DBDEBUG=true python3 ferromagnet.py
 ```
 
 ## Usage (Regular Mode)

@@ -9,15 +9,6 @@ import sqlite3
 import json
 from connectors import shodan_api, censys_api, nmap_api
 
-# Load the JSON data from the file
-with open('config.json') as f:
-    config = json.load(f)
-
-# Import API keys
-SHODAN_API_KEY = config["shodan"]["api_key"]
-CENSYS_API_ID = config["censys"]["api_id"]
-CENSYS_API_SECRET = config["censys"]["api_secret"]
-
 # Censys search queries
 CENSYS_QUERIES = [
     "services.service_name: COBALT_STRIKE", # Censys Detected Cobalt Strike
@@ -45,6 +36,27 @@ SHODAN_QUERIES = [
     "ssl:EdgeProxyBAYJune2015", # One Drive Malleable C2 Profile
     "ssl:windowsupdate.com 404 not found" # Microsoft Update Malleable C2 Profile
 ]
+
+# Load the JSON data from the file
+try:
+    with open('config.json') as f:
+       config = json.load(f)
+except Exception as e:
+    print("Failed to open or parse config file. Did you create it?")
+
+# Import API keys
+try:
+    SHODAN_API_KEY = config["shodan"]["api_key"]
+except Exception as e:
+    print("Error loading Shodan API key")
+try:
+    CENSYS_API_ID = config["censys"]["api_id"]
+except Exception as e:
+    print("Error loading Censys API ID")
+try:
+    CENSYS_API_SECRET = config["censys"]["api_secret"]
+except Exception as e:
+    print("Error loading Censys API SECRET")
 
 
 def dedupe_results(pages):
@@ -83,8 +95,10 @@ def main():
     # Initialize SQLite database connection and cursor
     conn = sqlite3.connect('beacons.db')
     c = conn.cursor()
+
     # Get all possible Cobalt Strike config keys
     all_keys = nmap_api.all_keys
+
     # Column type overwrites
     column_types = {
         "seen_at": "DATETIME",
@@ -101,7 +115,8 @@ def main():
     table_gen = "CREATE TABLE IF NOT EXISTS beacons (" + ", ".join(all_columns) + ")"
     c.execute(table_gen)
 
-    if 'DEBUG' in os.environ and os.path.exists('ip-port-pair-cache.json'):
+    # Use cached api data for debug mode
+    if 'NMAPDEBUG' in os.environ and os.path.exists('ip-port-pair-cache.json'):
             print('Loading IP/Port pairs from cache')
             with open('ip-port-pair-cache.json') as file:
                 ip_port_pairs = json.loads(file.read())
@@ -122,8 +137,9 @@ def main():
         # Merge results
         print("Merging Shodan and Censys Results")
         ip_port_pairs = dedupe_results(all_results)
-    
-        if 'DEBUG' in os.environ:
+
+        # Cache api data for debug mode
+        if 'NMAPDEBUG' in os.environ:
             with open('ip-port-pair-cache.json', 'wt') as file:
                 file.write(json.dumps(ip_port_pairs))
 
