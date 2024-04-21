@@ -103,9 +103,8 @@ Distributed under the MIT License. See `LICENSE.MD` for more information.
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-Projects I'd like to give credit to.
-
-* [Original Grab Beacon Config Nmap Script](https://github.com/whickey-r7/grab_beacon_config)
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
+* [The Original Grab Beacon Config Nmap Script](https://github.com/whickey-r7/grab_beacon_config)
+* [The README Template I used](https://github.com/othneildrew/Best-README-Template)
+* [The logo was designed by my good friend Zenidel](https://www.twitch.tv/zenidel)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
