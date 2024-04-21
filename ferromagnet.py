@@ -13,10 +13,8 @@ from connectors import shodan_api, censys_api, nmap_api
 # Censys search queries
 CENSYS_QUERIES = [
     "services.service_name: COBALT_STRIKE",  # Censys Detected Cobalt Strike
-    "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }",
-    # Default Cobalt Strike Cert
-    "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }",
-    # Default Cobalt Strike Cert
+    "services.certificate: { \"64257fc0fac31c01a5ccd816c73ea86e639260da1604d04db869bb603c2886e6\" }", # Default Cobalt Strike Cert
+    "services.certificate: { \"87f2085c32b6a2cc709b365f55873e207a9caa10bffecf2fd16d3cf9d94d390c\" }", # Default Cobalt Strike Cert
     "services.tls.certificates.leaf_data.issuer.common_name: \"Major Cobalt Strike\"",  # Default Cobalt Strike Cert
     "services.tls.certificates.leaf_data.subject.common_name: \"Major Cobalt Strike\"",  # Default Cobalt Strike Cert
     "services.tls.certificates.leaf_data.issuer.common_name: \"Pwn3rs Striked\"",  # Default Cobalt Strike Cert
@@ -147,6 +145,7 @@ def main():
             with open('ip-port-pair-cache.json', 'wt') as file:
                 file.write(json.dumps(ip_port_pairs))
 
+    # Run beacon scans and save them
     beacons = nmap_api.scan_for_cs_beacons(ip_port_pairs)
 
     # Insert data into the table
